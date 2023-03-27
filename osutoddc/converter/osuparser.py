@@ -15,7 +15,7 @@ def parserFactory(action):
 int_parser = parserFactory(int)
 str_parser = parserFactory(str)
 float_parser = parserFactory(float)
-bool_parser = parserFactory(bool)
+bool_parser = parserFactory(lambda x: x.strip() == "1")
 
 def dictParserFactory(fields, parsers):
     if len(fields)!=len(parsers): 
@@ -80,7 +80,7 @@ def no_parser(str):
 
 timing_points_parser = dictParserFactory(
     ["time"     ,"beatLength","meter"   ,"sampleSet","sampleIndex"  ,"volume"   ,"uninherited"  ,"effects"  ],
-    [int_parser ,float_parser,int_parser,int_parser ,int_parser     ,int_parser ,bool_parser    ,int_parser ]
+    [float_parser ,float_parser,int_parser,int_parser ,int_parser     ,int_parser ,bool_parser    ,int_parser ]
 )
 
 def timing_points_section_parser(lines):
@@ -92,7 +92,7 @@ def timing_points_section_parser(lines):
 ###############
 
 def take_first_entry_from_semicolon_separated_list(sslist):
-    return sslist.split(':')[0]
+    return int(sslist.split(':')[0])
 
 def note_type_parser(number):
     number = int(number)
