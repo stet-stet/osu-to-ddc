@@ -2,7 +2,7 @@
     "title": "Credits",
     "artist": "Frums",
     "stops": [],
-    "sm_fp": "../../test_outputs/credits/extra.osu",
+    "sm_fp": "test_outputs/credits/extra.osu",
     "music_fp": "audio.mp3",
     "pack": "osumania",
     "offset": -1267.782124,

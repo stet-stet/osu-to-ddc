@@ -3,6 +3,7 @@ import sys
 import argparse
 import shutil
 import json
+from tqdm import tqdm
 from osutoddc import osu_to_ddc
 
 def make_new_file(filename, exist_ok=True):
@@ -21,7 +22,7 @@ def one_file(input,output):
    with open(output,'w') as file:
       file.write(d)
 
-def one_folder(input,output):
+def one_folder(input,output,keep_osu=True):
    if not os.path.isdir(input):
       raise ValueError("Not a valid directory")
    os.makedirs(output, exist_ok=True)
@@ -36,9 +37,10 @@ def one_folder(input,output):
       d = json.dumps(d,indent=4)
       with open(f"{filename}.json",'w') as file:
          file.write(d)
-      os.remove(filename)
+      if not keep_osu:
+         os.remove(filename)
 
-def many_folder(input,output):
+def many_folder(input,output,keep_osu=True):
    if not os.path.isdir(input):
       raise ValueError("Not a valid directory")
    os.makedirs(output,exist_ok=True)
@@ -46,10 +48,13 @@ def many_folder(input,output):
 
    folders = [os.path.join(output, e) for e in os.listdir(output) 
                   if os.path.isdir(os.path.join(output,e))]
-   for folder in folders:
-      one_folder(folder,folder)
+   for folder in tqdm(folders):
+      try:
+         one_folder(folder,folder,keep_osu=keep_osu)
+      except Exception:
+         print("error with: ",input)
 
-def run(input,output):
+def run(input,output,keep_osu=True):
    if input==output:
       raise ValueError("input must be .osu, output must be .json")
    if os.path.isfile(input):
@@ -60,7 +65,7 @@ def run(input,output):
       if len(listing)>0:
          one_folder(input,output)
       else:
-         many_folder(input,output)
+         many_folder(input,output,keep_osu)
    else:
       raise ValueError("input does not exist?")
 
@@ -70,7 +75,8 @@ if __name__=="__main__":
                                epilog="for more information please contact jayeonyi@snu.ac.kr")
    parser.add_argument("path",help="path to file or folder to convert to ddc json format")
    parser.add_argument("output_path",help="output path")
+   parser.add_argument("--keep-osu",action='store_true',default=True)
    args = parser.parse_args()
    print(args)
 
-   run(args.path, args.output_path)
+   run(args.path, args.output_path,keep_osu=args.keep_osu)

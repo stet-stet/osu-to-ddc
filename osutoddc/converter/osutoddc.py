@@ -183,7 +183,7 @@ def fill_charts(osu_dict, bpm_list, bar_list, offset):
 
     current_bpm_index = 0
     for time in sorted_time:
-        while current_bpm_index+1 < len(timing_points) and time > transition_times[current_bpm_index+1]:
+        while current_bpm_index+1 < len(timing_points) and time >= transition_times[current_bpm_index+1]:
             current_bpm_index += 1
         current_starting_bar = tp_bars[current_bpm_index]
         current_starting_beat = tp_beats[current_bpm_index]
@@ -216,7 +216,7 @@ def fill_charts(osu_dict, bpm_list, bar_list, offset):
         micro_beat = round(micro_beat*48)
         to_push[0][2] = micro_beat
         
-        to_push[1] = current_beat
+        to_push[1] = round_to_nearest_48th(current_beat)
 
         time_in_ms = round_time_to_48th_beat(time, current_starting_time, current_mspb)
         to_push[2] = time_in_ms / 1000
