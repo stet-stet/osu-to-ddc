@@ -147,7 +147,7 @@ def parse_osu_file(filename):
 
     ret = {}
 
-    with open(filename,'r') as file:
+    with open(filename,'r',errors='replace') as file:
         lines = [line.strip() for line in file.readlines()]
     
     # correctness check

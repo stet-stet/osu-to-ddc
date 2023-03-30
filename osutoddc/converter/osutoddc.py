@@ -11,7 +11,7 @@ from osuparser import parse_osu_file
 def fetch_ranked_map_library():
     with open("/mnt/c/Users/manym/Desktop/home_root/osu-to-ddc/osu_mania_ranked_library.json") as file:
         lib = file.read()
-    return lib
+    return json.loads(lib)
 
 ranked_map_library = fetch_ranked_map_library()
 
@@ -43,21 +43,19 @@ def fill_difficulty_coarse(osu_dict):
         return "Challenging"
 
 def fill_difficulty_fine(osu_dict):
-    beatmapsetid = osu_dict['[Metadata]']['BeatmapSetID']
-    beatmapid = osu_dict['[Metadata]']['BeatmapID']
-    beatmaps = ranked_map_library[str(beatmapsetid)]['beatmaps']
-    for beatmap in beatmaps:
-        if beatmap['id'] == beatmapid:
-            return beatmap[difficulty_rating]
+    try:
+        beatmapsetid = osu_dict['[Metadata]']['BeatmapSetID']
+        beatmapid = osu_dict['[Metadata]']['BeatmapID']
+        beatmaps = ranked_map_library[str(beatmapsetid)]['beatmaps']
+        for beatmap in beatmaps:
+            if beatmap['id'] == beatmapid:
+                return beatmap["difficulty_rating"]
+    except KeyError:
+        return 2.00
     
 
-def fill_music_fp(filename):
-    audioset = [e for e in os.listdir(os.path.dirname(filename)) if not e.endswith(".osu")]
-    if len(audioset) == 1:
-        audio = audioset[0]
-        return os.path.join(os.path.dirname(filename), audio)
-    else:
-        raise ValueError(f"There is more than one audio associated with the beatmapset of {filename}")
+def fill_music_fp(osu_dict):
+    return osu_dict['[General]']['AudioFilename']
 
 
 ############
@@ -171,7 +169,7 @@ def fill_charts(osu_dict, bpm_list, bar_list, offset):
             new_note['holdEnd'] = -1
             hold_ends.append(new_note)
     notes.extend(hold_ends)
-    print(hold_ends, file=sys.stderr)
+    # print(hold_ends, file=sys.stderr)
 
     notes_by_time = defaultdict(list)
     for note in notes:
@@ -249,7 +247,7 @@ def osu_to_ddc(filename):
     ret['artist'] = fill_artist(osu_dict)
     ret['stops'] = []
     ret['sm_fp'] = filename #point to any one of them
-    ret['music_fp'] = fill_music_fp(filename)
+    ret['music_fp'] = fill_music_fp(osu_dict)
     ret['pack'] = "osumania"
 
     ret['offset'] = drag_timingpoint_to_before_0(osu_dict)
@@ -257,7 +255,7 @@ def osu_to_ddc(filename):
     ret['charts'] = [{
         "notes": fill_charts(osu_dict, ret['bpms'], bars, ret['offset']),
         "difficulty_coarse": fill_difficulty_coarse(osu_dict),
-        "difficulty_fine": fill_difficulty_fine,
+        "difficulty_fine": fill_difficulty_fine(osu_dict),
         "type": "dance-single",
         "desc_or_author": fill_chart_author(osu_dict)
     }]
@@ -266,4 +264,7 @@ def osu_to_ddc(filename):
 if __name__ == "__main__":
     from pprint import pprint
     import sys 
-    pprint(osu_to_ddc(sys.argv[1]))
+    import json 
+    a = json.dumps(osu_to_ddc(sys.argv[1]),indent=4)
+    with open(sys.argv[2],'w') as file:
+        file.write(a)
