@@ -106,7 +106,7 @@ def fill_bpms_and_offset(osu_dict, offset):
 
     for timing_point in timing_points[1:]:
         now_ms = timing_point['time']
-        now_beat = round(previous_beat + (now_ms - previous_ms) / previous_mspb,3)
+        now_beat = round( round_to_nearest_48th(previous_beat + (now_ms - previous_ms) / previous_mspb), 3)
         now_bpm = mspb_to_bpm(timing_point['beatLength'])
         now_bar = roundup(previous_bar + (now_beat - previous_beat) / previous_meter)
 
