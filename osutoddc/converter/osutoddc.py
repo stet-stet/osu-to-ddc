@@ -121,6 +121,46 @@ def fill_bpms_and_offset(osu_dict, offset):
 
     return bpms, bars
 
+def fill_bar_to_beat(osu_dict, offset, max_bar):
+    timing_points = [e for e in osu_dict['[TimingPoints]'] if e['uninherited'] is True]
+    assert offset == timing_points[0]['time'] 
+    # dirty trick to ensure the entire length is considered
+    timing_points += [
+        {'time':1000*60*20,'beatLength':100.0,'meter':4,'sampleSet':None,'sampleIndex':None,'volume':None,'uninherited':True,'effects':None}
+    ]
+
+    current_beat = 0
+    current_bar = 0
+    current_time = offset
+    current_timing_point = 0
+    current_meter = timing_points[current_timing_point]['meter']
+    current_mspb = timing_points[current_timing_point]['beatLength']
+
+    bar_to_beat = [(0,0)]
+
+    for next_timing_point in timing_points[1:]:
+        while current_time + current_meter * current_mspb <= next_timing_point['time']:
+            current_bar += 1
+            current_beat += current_meter
+            current_time += (current_meter * current_mspb)
+            bar_to_beat.append((current_bar, round(current_beat,3)))
+            if current_bar == max_bar: return bar_to_beat
+        # a new bar begins with each new timing point:
+        additional_beats = round_to_nearest_48th( (next_timing_point['time'] - current_time)/current_mspb )
+        if additional_beats > 0.:
+            current_bar += 1
+            current_beat += additional_beats
+            current_beat = round_to_nearest_48th(current_beat)
+            bar_to_beat.append((current_bar, round(current_beat,3)))
+            if current_bar == max_bar: return bar_to_beat
+        
+        current_time = next_timing_point['time']
+        current_timing_point += 1
+        current_meter = timing_points[current_timing_point]['meter']
+        current_mspb = timing_points[current_timing_point]['beatLength']
+
+    return bar_to_beat 
+
 ############
 ############ Notes
 ############
@@ -259,6 +299,8 @@ def osu_to_ddc(filename):
         "type": "dance-single",
         "desc_or_author": fill_chart_author(osu_dict)
     }]
+    max_bar = ret['charts'][0]['notes'][-1][0][0] # ew!
+    ret['bar_to_beat'] = fill_bar_to_beat(osu_dict, ret['offset'],max_bar)
     return ret
 
 if __name__ == "__main__":
